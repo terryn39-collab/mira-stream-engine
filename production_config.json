@@ -1,0 +1,10 @@
+{
+  "environment": "production",
+  "primary_endpoint_wrapper": "https://onrender.com",
+  "chat_path": "/stream/chat",
+  "active": true,
+  "provider": "Tavus",
+  "replica_id": "p654fc616763",
+  "persona_id": null,
+  "verification_status": "provider_replica_saved_render_service_hostname_unverified"
+}
