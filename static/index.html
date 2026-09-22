@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mira Laurent — Stream Review</title>
+  <style>
+    :root{--bg:#0d0d0c;--panel:#151513;--line:#2a2925;--cream:#e8e0d2;--stone:#b7aa98;--muted:#8d8980}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--cream);font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}
+    .shell{min-height:100vh;display:grid;grid-template-columns:minmax(300px,430px) minmax(320px,1fr);gap:28px;max-width:1180px;margin:auto;padding:32px}
+    .video-card,.chat-card{border:1px solid var(--line);background:var(--panel);border-radius:22px;overflow:hidden;box-shadow:0 20px 60px #0006}
+    .video-wrap{aspect-ratio:9/16;background:linear-gradient(145deg,#211c19,#090909);position:relative}video{width:100%;height:100%;object-fit:cover;background:#090909}
+    .badge{position:absolute;top:16px;left:16px;padding:7px 10px;border:1px solid #ffffff20;border-radius:999px;background:#0d0d0caa;backdrop-filter:blur(10px);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+    .identity{padding:18px 20px}.identity h1{font-family:Georgia,serif;font-weight:400;font-size:24px;margin:0 0 5px}.identity p{margin:0;color:var(--muted);font-size:13px}
+    .chat-card{display:flex;flex-direction:column;min-height:620px}.head{padding:22px;border-bottom:1px solid var(--line)}.head h2{margin:0;font-family:Georgia,serif;font-weight:400}.head p{margin:6px 0 0;color:var(--muted);font-size:13px}
+    #chatLog{flex:1;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:12px}.msg{max-width:82%;padding:11px 14px;border-radius:15px;line-height:1.45;font-size:14px}.user{align-self:flex-end;background:var(--cream);color:#171717}.mira{align-self:flex-start;background:#211f1b;border:1px solid var(--line)}
+    form{display:flex;gap:10px;padding:18px;border-top:1px solid var(--line)}input{flex:1;background:#0e0e0d;color:var(--cream);border:1px solid var(--line);border-radius:12px;padding:13px 14px;outline:none}input:focus{border-color:var(--stone)}
+    button{border:0;border-radius:12px;padding:0 18px;background:var(--cream);color:#171717;font-weight:700;cursor:pointer}button:disabled{opacity:.45;cursor:wait}.status{padding:0 22px 16px;color:var(--muted);font-size:12px}
+    @media(max-width:780px){.shell{grid-template-columns:1fr;padding:16px}.video-card{max-width:430px;width:100%;margin:auto}.chat-card{min-height:520px}}
+  </style>
+</head>
+<body>
+<main class="shell">
+<section class="video-card"><div class="video-wrap"><video id="miraVideo" autoplay playsinline muted></video><div class="badge">Mira • Live Preview</div></div><div class="identity"><h1>Mira Laurent</h1><p>Global luxury • travel • minimalist fashion</p></div></section>
+<section class="chat-card"><div class="head"><h2>Conversation</h2><p>Review Mira's dialogue and real-time avatar payload.</p></div><div id="chatLog" aria-live="polite"><div class="msg mira">Where should we go next?</div></div><form id="chatForm"><input id="chatInput" autocomplete="off" maxlength="2000" placeholder="Message Mira…" required><button id="sendButton" type="submit">Send</button></form><div class="status" id="status">Ready</div></section>
+</main>
+<script>
+const sessionId=(crypto.randomUUID?crypto.randomUUID():`session-${Date.now()}`);
+const form=document.getElementById('chatForm'),input=document.getElementById('chatInput'),log=document.getElementById('chatLog'),button=document.getElementById('sendButton'),statusEl=document.getElementById('status'),video=document.getElementById('miraVideo');
+function addMessage(text,who){const node=document.createElement('div');node.className=`msg ${who}`;node.textContent=text;log.appendChild(node);log.scrollTop=log.scrollHeight}
+function updateVideo(payload){const streamUrl=payload.stream_url||payload.video_url||payload.webrtc_url;if(streamUrl&&/^https?:\/\//.test(streamUrl)){video.src=streamUrl;video.play().catch(()=>{})}video.dataset.lastEvent=payload.event||'avatar.speak';video.dataset.lastText=payload.text||''}
+form.addEventListener('submit',async(event)=>{event.preventDefault();const message=input.value.trim();if(!message)return;addMessage(message,'user');input.value='';button.disabled=true;statusEl.textContent='Mira is responding…';try{const response=await fetch('/stream/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_message:message,session_id:sessionId})});if(!response.ok)throw new Error(`HTTP ${response.status}`);const payload=await response.json();addMessage(payload.text||'No response text received.','mira');updateVideo(payload);statusEl.textContent=`Ready • ${payload.transport||'stream'} payload received`}catch(error){addMessage('The stream backend is unavailable right now.','mira');statusEl.textContent=error.message}finally{button.disabled=false;input.focus()}});
+</script>
+</body>
+</html>
